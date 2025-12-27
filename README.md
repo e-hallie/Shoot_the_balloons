@@ -156,6 +156,16 @@ De code gebruikt:
 
 ## Licentie
 
+Dit project is ontwikkeld door Raymond Hallie.
+
+## Bijdragen
+
+Suggesties en verbeteringen zijn welkom! Open een issue of pull request.
+
+
+
+
+
 
 
 # Virtual Balloon Shooter 🎯🎈
@@ -323,8 +333,3 @@ This project was developed by Raymond Hallie.
 Suggestions and improvements are welcome! Open an issue or pull request.
 
 
-Dit project is ontwikkeld door Raymond Hallie.
-
-## Bijdragen
-
-Suggesties en verbeteringen zijn welkom! Open een issue of pull request.
