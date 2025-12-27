@@ -1,1 +1,163 @@
-# Shoot_the_balloons
+# Virtuele Ballonnenschieter 🎯🎈
+
+Een audiogame voor visueel gehandicapte spelers, ontwikkeld op de STM32F401RET6 microcontroller.
+
+## Beschrijving
+
+De Virtuele Ballonnenschieter is een schietspel waarbij spelers met behulp van audio-feedback virtuele ballonnen moeten raken. Het spel is speciaal ontworpen voor mensen met een visuele beperking en maakt gebruik van:
+
+- **3D audio-feedback** via een piezo buzzer (toonhoogte geeft afstand tot ballon aan)
+- **Tactiele feedback** via een vibration motor (trillen wanneer je op de ballon richt)
+- **Gesproken instructies** via WAV-bestanden op SD-kaart
+
+## Hardware
+
+| Component | Beschrijving | Aansluiting |
+|-----------|--------------|-------------|
+| STM32F401RET6 | Microcontroller | - |
+| LSM6DSL | 6-axis IMU (gyroscoop + accelerometer) | I2C via TCA9548A poort 3 |
+| TCA9548A | I2C Multiplexer | I2C1 (PB8/PB9) |
+| MAX98357A | I2S Audio DAC | I2S2 (PB12/13/15) |
+| Piezo buzzer | Richt-feedback | PWM TIM2_CH1 (PA0) |
+| Vibration motor | Trefzone-feedback | GPIO (PB5) |
+| SD-kaart module | Audio opslag | SPI3 (PC10/11/12), CS=PB0 |
+| Trigger knop | Schieten | PA1 (actief laag) |
+| Start/Stop knop | Game besturing | PA2 (actief laag) |
+
+### Aansluitschema
+
+```
+STM32F401RET6
+├── I2C1 (PB8=SCL, PB9=SDA)
+│   └── TCA9548A Multiplexer (0x70)
+│       └── Poort 3: LSM6DSL (0x6A)
+├── I2S2 (PB12=WS, PB13=CK, PB15=SD)
+│   └── MAX98357A → Speaker
+├── SPI3 (PC10=SCK, PC11=MISO, PC12=MOSI)
+│   └── SD-kaart module (CS=PB0)
+├── TIM2_CH1 (PA0)
+│   └── Piezo buzzer
+├── GPIO (PB5)
+│   └── Vibration motor
+└── GPIO Inputs
+    ├── PA1: Trigger (PULLUP)
+    └── PA2: Start/Stop (PULLUP)
+```
+
+## Gameplay
+
+### Besturing
+- **Korte druk Start-knop (PA2)**: Start nieuw spel
+- **Lange druk Start-knop (2 sec)**: Stop spel voortijdig
+- **Trigger-knop (PA1)**: Schiet op ballon
+
+### Spelverloop
+1. Druk op Start → Kalibratie instructie + 1.5 sec stilhouden
+2. Sensor kalibreert de rustpositie als VPA-centrum
+3. "Start" geluid → Spel begint (120 seconden)
+4. Zoek ballonnen met audio-feedback:
+   - **Lage toon**: Ballon is ver weg
+   - **Hoge toon**: Ballon is dichtbij
+   - **Hoogste toon + vibratie**: Binnen trefzone!
+5. Schiet met trigger-knop
+6. Tijdswaarschuwingen: "Nog 1 minuut" en "Nog 30 seconden"
+7. Na 120 sec: Score wordt voorgelezen
+
+### Audio Feedback
+| Situatie | Feedback |
+|----------|----------|
+| Buiten speelveld (VPA) | Korte piepjes (waarschuwing) |
+| Binnen VPA, ver van ballon | Lage continue toon (~300 Hz) |
+| Binnen VPA, dichtbij ballon | Hoge continue toon (~2500 Hz) |
+| Binnen trefzone | Hoogste toon + vibration motor |
+
+## Configuratie
+
+Belangrijke parameters in `main.c`:
+
+```c
+#define GAME_DURATION       120      /* Speeltijd in seconden */
+#define HIT_RADIUS          15.0f    /* Trefradius in graden */
+#define VPA_AZIMUTH_RANGE   60.0f    /* Horizontaal bereik ±60° */
+#define VPA_ELEVATION_MIN   0.0f     /* Minimale elevatie (horizon) */
+#define VPA_ELEVATION_MAX   25.0f    /* Maximale elevatie */
+#define MIN_TONE_FREQ       300      /* Piezo frequentie (ver) */
+#define MAX_TONE_FREQ       2500     /* Piezo frequentie (dichtbij) */
+```
+
+## SD-kaart Bestanden
+
+Plaats de volgende WAV-bestanden op de SD-kaart (root directory):
+
+| Bestand | Beschrijving |
+|---------|--------------|
+| `e_2_min.wav` | "Je hebt 2 minuten" (instructie) |
+| `e_start1.wav` | Start instructie |
+| `e_go.wav` | "Go!" |
+| `e_raak.wav` | "Raak!" |
+| `e_mis.wav` | "Mis!" |
+| `e_over.wav` | "Game over" |
+| `e_niet.wav` | "Je hebt niet geschoten" |
+| `e_1_bal.wav` | "1 ballon geraakt" |
+| `ng_1min.wav` | "Nog 1 minuut" |
+| `ng_30sec.wav` | "Nog 30 seconden" |
+| `laser_x1.wav` | Schot geluidseffect |
+| `knal_1.wav` | Ballon knal effect |
+| `sc_jh.wav` | "Je hebt" |
+| `sc_ks.wav` | "keer geschoten en" |
+| `0.wav` - `20.wav` | Getallen 0-20 |
+| `30.wav` - `90.wav` | Tientallen |
+| `100.wav` | "honderd" |
+| `sc_bg.wav` | "ballonnen geraakt" |
+
+**WAV formaat**: 22kHz of 26kHz, 16-bit, mono
+
+## Bouwen
+
+### Vereisten
+- STM32CubeIDE of arm-none-eabi-gcc
+- STM32F4 HAL drivers
+- FatFS middleware
+
+### Compileren
+```bash
+# Met STM32CubeIDE: importeer project en build
+# Of met Makefile:
+make all
+```
+
+## Sensor Oriëntatie
+
+De LSM6DSL moet als volgt georiënteerd zijn:
+- **X-as**: Recht vooruit (schietrichting)
+- **Y-as**: Links/rechts
+- **Z-as**: Omhoog/omlaag
+
+De code gebruikt:
+- **Azimuth (links/rechts)**: Gyroscoop Z-as met drift correctie
+- **Elevatie (op/neer)**: Accelerometer X-as (geen drift!)
+
+## Versiegeschiedenis
+
+### v3.2 (27 december 2025)
+- Tijdswaarschuwingen toegevoegd ("nog 1 minuut" en "nog 30 seconden")
+
+### v3.1 (17 december 2025)
+- VPA margins aangepast voor betere ballon placement
+- Ballon spawn range: 5°-20° elevatie, ±55° azimuth
+
+### v3.0
+- Verbeterde score rapportage met verschillende scenario's
+- Python visualisatie ondersteuning via UART
+
+### v2.0
+- Stabiele azimuth tracking met dynamische drift correctie
+- Elevatie via accelerometer (drift-vrij)
+
+## Licentie
+
+Dit project is ontwikkeld door Raymond Hallie.
+
+## Bijdragen
+
+Suggesties en verbeteringen zijn welkom! Open een issue of pull request.
