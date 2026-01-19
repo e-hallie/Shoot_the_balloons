@@ -139,6 +139,9 @@ De code gebruikt:
 
 ## Versiegeschiedenis
 
+### v3.3 (Januari 19, 2026)
+- Toegevoegd Kalman filter, fusing Gyro en Acc sensor data.
+
 ### v3.2 (27 december 2025)
 - Tijdswaarschuwingen toegevoegd ("nog 1 minuut" en "nog 30 seconden")
 
@@ -309,7 +312,7 @@ The code uses:
 
 ## Version History
 
-### v3.3 (Januari 19, 2026)
+### v3.3 (January 19, 2026)
 - Added Kalman filter, fusing Gyro and Acc sensor data.
 
 ### v3.2 (December 27, 2025)
