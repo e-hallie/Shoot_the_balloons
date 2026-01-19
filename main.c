@@ -3,7 +3,7 @@
  * Schietspel voor Visueel Gehandicapte Deelnemers
  * 
  * STM32F401RET6
- * Versie 3.1 - GYRO VISUALISATIE MODUS
+ * Versie 3.3 - GYRO VISUALISATIE MODUS
  * Ontwerper: Raymond Hallie
  * Datum: 19 januari 2026
  * ==========================================================================
@@ -1393,4 +1393,5 @@ void Error_Handler(void) {
     __disable_irq();
     while (1);
 }
+
 
