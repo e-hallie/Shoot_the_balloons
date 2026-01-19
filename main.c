@@ -14,6 +14,7 @@
  *   Output: Acc(g): X=+0.000 Y=+0.000 Z=+0.000 | Gyro(dps): X=+0.00 Y=+0.00 Z=+0.00
  * 
  * WIJZIGINGEN in v3.1:
+ * - Kalman filter toegevoegd voor de fusie Gyro en Acc.
  * - VPA_MARGIN verkleind van 10? naar 5? voor beter ballon placement
  * - Ballonnen spawnen nu tussen 5?-20? elevatie (was 10?-35?)
  * - Azimuth range aangepast naar -55? tot +55? (was -50? tot +50?)
@@ -1392,3 +1393,4 @@ void Error_Handler(void) {
     __disable_irq();
     while (1);
 }
+
