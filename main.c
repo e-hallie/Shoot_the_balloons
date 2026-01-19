@@ -3,15 +3,10 @@
  * Schietspel voor Visueel Gehandicapte Deelnemers
  * 
  * STM32F401RET6
- * Versie 3.2 - TIJDSWAARSCHUWINGEN TOEGEVOEGD
+ * Versie 3.1 - GYRO VISUALISATIE MODUS
  * Ontwerper: Raymond Hallie
- * Datum: 27 december 2025
+ * Datum: 19 januari 2026
  * ==========================================================================
- * 
- * WIJZIGINGEN in v3.2:
- * - Tijdswaarschuwingen toegevoegd:
- *   - ng_1min.wav wordt afgespeeld bij 60 seconden resterend
- *   - ng_30sec.wav wordt afgespeeld bij 30 seconden resterend
  * 
  * AANGEPAST VOOR PYTHON VISUALISATIE:
  * - Alle debug UART output verwijderd
@@ -144,10 +139,6 @@ uint32_t gameStartTime = 0;
 uint32_t score = 0;
 uint32_t shotsFired = 0;        /* Aantal afgevuurde schoten */
 bool gameRunning = false;
-
-/* Tijdswaarschuwing flags - worden gereset bij elke nieuwe game */
-bool warned_1min = false;       /* Waarschuwing "nog 1 minuut" afgespeeld */
-bool warned_30sec = false;      /* Waarschuwing "nog 30 seconden" afgespeeld */
 
 /* Sensor ruwe data */
 float acc_x, acc_y, acc_z;      /* Accelerometer in g */
@@ -929,10 +920,6 @@ void GameStateMachine(void) {
             gameStartTime = HAL_GetTick();
             gameRunning = true;
             
-            /* Reset tijdswaarschuwing flags voor nieuwe game */
-            warned_1min = false;
-            warned_30sec = false;
-            
             /* Spawn eerste ballon */
             SpawnBalloon();
             
@@ -953,28 +940,32 @@ void GameStateMachine(void) {
                 break;
             }
             
-            /* Tijdswaarschuwingen - bereken resterende tijd */
+            /* Tijdswaarschuwingen */
             {
+                static bool warned1Min = false;
+                static bool warned30Sec = false;
                 uint32_t remainingTime = GAME_DURATION - elapsedTime;
                 
-                /* Waarschuwing bij 60 seconden resterend */
-                if (remainingTime <= 60 && remainingTime > 30 && !warned_1min) {
-                    warned_1min = true;
-                    
-                    /* Tijdelijk piezo stoppen voor duidelijke audio */
+                /* Nog 1 minuut waarschuwing */
+                if (!warned1Min && remainingTime <= 60 && remainingTime > 30) {
+                    warned1Min = true;
                     Piezo_Stop();
                     Sound_Handler("ng_1min.wav");
                     Piezo_Start();
                 }
                 
-                /* Waarschuwing bij 30 seconden resterend */
-                if (remainingTime <= 30 && !warned_30sec) {
-                    warned_30sec = true;
-                    
-                    /* Tijdelijk piezo stoppen voor duidelijke audio */
+                /* Nog 30 seconden waarschuwing */
+                if (!warned30Sec && remainingTime <= 30) {
+                    warned30Sec = true;
                     Piezo_Stop();
                     Sound_Handler("ng_30sec.wav");
                     Piezo_Start();
+                }
+                
+                /* Reset flags bij nieuwe game (wanneer elapsedTime weer laag is) */
+                if (elapsedTime < 10) {
+                    warned1Min = false;
+                    warned30Sec = false;
                 }
             }
             
