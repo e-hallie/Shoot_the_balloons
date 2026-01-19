@@ -309,6 +309,9 @@ The code uses:
 
 ## Version History
 
+### v3.3 (Januari 19, 2026)
+- Added Kalman filter, fusing Gyro and Acc sensor data.
+
 ### v3.2 (December 27, 2025)
 - Added time warnings ("one minute remaining" and "30 seconds remaining")
 
